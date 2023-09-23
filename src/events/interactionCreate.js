@@ -1,4 +1,4 @@
-const { EmbedBuilder, MessageActionRow, MessageButton } = require('discord.js');
+const { EmbedBuilder, MessageActionRow, MessageButton,ButtonBuilder,ActionRowBuilder } = require('discord.js');
 
 module.exports = {
   name: 'interactionCreate',
@@ -20,19 +20,33 @@ module.exports = {
 if (interaction.isModalSubmit()) {
   if (interaction.customId === 'pollModal') {
     const eventName = interaction.components[0].components[0].value;
-    const choices = interaction.components[1].components[0].value.split(',');
+    const eventDescription =interaction.components[1].components[0].value;
+    const choices = interaction.components[2].components[0].value.split(',');
+      // Extracting the event description
 
     // Create the poll embed using EmbedBuilder
     const pollEmbed = new EmbedBuilder()
       .setTitle(eventName)
-      .setDescription('Please vote by commenting below.')
+      .setDescription(`Description: ${eventDescription}\n\nPlease vote by commenting below.`)
       .setColor(0x0099FF)
       .setTimestamp();
 
-    // Send the poll embed without buttons
-    await interaction.channel.send({ embeds: [pollEmbed] });
+      // Create buttons for each choice using ButtonBuilder
+      const buttons = choices.map((choice, index) => {
+        return new ButtonBuilder()
+          .setCustomId(JSON.stringify({ffb:`choice_${index}`}))
+          .setLabel(choice)
+          .setStyle('Primary');
+      });
 
-    await interaction.reply(`Poll created for event: ${eventName} with choices: ${choices.join(', ')}`);
+      // Create an action row and add the buttons
+      const actionRow = new ActionRowBuilder().addComponents(buttons);
+
+     // Send the poll embed and buttons
+     await interaction.channel.send({ embeds: [pollEmbed], components: [actionRow] });
+
+     await interaction.reply(`Poll created for event: ${eventName} with choices: ${choices.join(', ')}`);
+   
   }
     }
   },
