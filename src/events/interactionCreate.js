@@ -31,12 +31,29 @@ if (interaction.isModalSubmit()) {
       .setColor(0x0099FF)
       .setTimestamp();
 
+      //Present, Absent, Late, I don't know
       // Create buttons for each choice using ButtonBuilder
       const buttons = choices.map((choice, index) => {
+        let style = 'Primary';
+        if(choice === 'Present' || choice === 'present'){
+          style = 'Success';
+        }
+        else if(choice === 'Absent' || choice === 'absent'){
+          style = 'Danger';
+        }
+        else if(choice === 'Late' || choice === 'late'){
+          style = 'Primary';
+        }
+        else if(choice === 'I do not know' || choice === 'i do not know'){
+          style = 'Secondary';
+        }
+        else{
+          style = 'Secondary';
+        }
         return new ButtonBuilder()
           .setCustomId(JSON.stringify({ffb:`choice_${index}`}))
           .setLabel(choice)
-          .setStyle('Primary');
+          .setStyle(style);
       });
 
       // Create an action row and add the buttons
