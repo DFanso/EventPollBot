@@ -76,11 +76,17 @@ module.exports = {
     }
 
      
+// Initialize the user-button map
+const userButtonMap = {};
+
 // Handle button interactions
 if (interaction.isButton()) {
   try {
     const customIdObject = JSON.parse(interaction.customId);
-    const username = interaction.user.username;
+    const userId = interaction.user.id;
+
+    // Create the user mention string
+    const userMention = `<@${userId}>`;
 
     // Fetch the message containing the embed
     const message = await interaction.channel.messages.fetch({ around: interaction.message.id, limit: 1 });
@@ -94,20 +100,28 @@ if (interaction.isButton()) {
     const newEmbed = new EmbedBuilder()
       .setTitle(title)
       .setDescription(description)
-      .setColor(color);
+      .setColor(color)
+      .setTimestamp(new Date(timestamp));
 
-    // Convert the timestamp string to a Date object and set it
-    const dateTimestamp = new Date(timestamp);
-    newEmbed.setTimestamp(dateTimestamp);
+    // Check if the user has previously clicked a button
+    if (userButtonMap[userId] !== undefined) {
+      const prevIndex = userButtonMap[userId];
+      // Remove the user mention from the previous field
+      const prevValues = fields[prevIndex].value.split('\n');
+      fields[prevIndex].value = prevValues.filter(val => val !== userMention).join('\n');
+    }
 
     // Update the fields
     const index = parseInt(customIdObject.ffb.split('_')[1]);
-    fields[index].value = username;  // Set the username as the value
+    fields[index].value += `${userMention}\n`;
+
+    // Update the user-button map
+    userButtonMap[userId] = index;
 
     // Ensure all field values are non-empty
     fields.forEach(field => {
       if (!field.value || field.value.length === 0) {
-        field.value = " ";  // Set to a space if the value is empty
+        field.value = " ";
       }
     });
 
@@ -117,11 +131,13 @@ if (interaction.isButton()) {
     // Edit the message to update the embed
     await fetchedMessage.edit({ embeds: [newEmbed] });
 
-    await interaction.reply(`User ${username} voted for ${fields[index].name}.`);
+    await interaction.reply(`User ${userMention} voted for ${fields[index].name}.`);
   } catch (error) {
     console.error("An error occurred:", error);
   }
 }
+
+
 
 
 
