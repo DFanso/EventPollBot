@@ -82,6 +82,9 @@ module.exports = {
 // Handle button interactions
 if (interaction.isButton()) {
   try {
+
+    await interaction.deferUpdate();
+
     const customIdObject = JSON.parse(interaction.customId);
     const userId = interaction.user.id;
     const userMention = `<@${userId}>`;
@@ -91,8 +94,6 @@ if (interaction.isButton()) {
     const receivedEmbed = fetchedMessage.embeds[0];
     const { fields } = receivedEmbed;
 
-    // Debugging: Log the current state of fields and userButtonMap
-    console.log("Before:", { fields, userButtonMap });
 
       // Remove previous choice if exists
     if (userButtonMap.hasOwnProperty(userId)) {
@@ -105,13 +106,11 @@ if (interaction.isButton()) {
   
   // Add new choice
   const index = parseInt(customIdObject.ffb.split('_')[1]);
+  const choice = fields[index].name; 
   fields[index].value = fields[index].value ? `${fields[index].value}\n${userMention}` : userMention;
 
   // Update the user-button map
   userButtonMap[userId] = index;
-
-    // Debugging: Log the updated state of fields and userButtonMap
-    console.log("After:", { fields, userButtonMap });
 
     // Ensure all field values are non-empty and trim extra spaces
     fields.forEach(field => {
@@ -132,6 +131,7 @@ if (interaction.isButton()) {
       .addFields(fields);
 
     await fetchedMessage.edit({ embeds: [newEmbed] });
+    await interaction.followUp({ content: `You voted for ${choice}`, ephemeral: true });
 
   } catch (error) {
     console.error("An error occurred:", error);
