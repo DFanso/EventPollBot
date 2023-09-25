@@ -27,15 +27,16 @@ module.exports = {
 
       // Create an array of fields for the choices
       const choiceFields = choices.map((choice, index) => {
-        return { name: choice, value: ' ', inline: false };
+        return { name: choice, value: ' ', inline: true };
       });
 
     // Create the poll embed using EmbedBuilder
     const pollEmbed = new EmbedBuilder()
       .setTitle(eventName)
-      .setDescription(`Description: ${eventDescription}\n\nPlease vote by commenting below.`)
+      .setDescription(`Description: ${eventDescription}\n\nPlease vote.`)
       .setColor(0x0099FF)
       .setTimestamp()
+      .setAuthor({ name: interaction.user.username, iconURL: interaction.user.avatarURL(), url: 'https://discord.js.org' })
       .addFields(
         ...choiceFields,
       );
@@ -93,17 +94,18 @@ if (interaction.isButton()) {
     // Debugging: Log the current state of fields and userButtonMap
     console.log("Before:", { fields, userButtonMap });
 
-    // Remove previous choice if exists
-  if (userButtonMap.hasOwnProperty(userId)) {
-    const prevIndex = userButtonMap[userId];
-    const prevUsers = fields[prevIndex].value.split(' ');
-    const newPrevUsers = prevUsers.filter(u => u !== userMention).join(' ');
-    fields[prevIndex].value = newPrevUsers;
-  }
+      // Remove previous choice if exists
+    if (userButtonMap.hasOwnProperty(userId)) {
+      const prevIndex = userButtonMap[userId];
+      const prevUsers = fields[prevIndex].value.split('\n');  // Split by newline
+      const newPrevUsers = prevUsers.filter(u => u !== userMention).join('\n');  // Join by newline
+      fields[prevIndex].value = newPrevUsers;
+    }
 
+  
   // Add new choice
   const index = parseInt(customIdObject.ffb.split('_')[1]);
-  fields[index].value = fields[index].value ? fields[index].value + ' ' + userMention : userMention;
+  fields[index].value = fields[index].value ? `${fields[index].value}\n${userMention}` : userMention;
 
   // Update the user-button map
   userButtonMap[userId] = index;
@@ -125,6 +127,7 @@ if (interaction.isButton()) {
       .setTitle(receivedEmbed.title)
       .setDescription(receivedEmbed.description)
       .setColor(receivedEmbed.color)
+      .setAuthor(receivedEmbed.author)
       .setTimestamp(new Date(receivedEmbed.timestamp))
       .addFields(fields);
 
