@@ -1,5 +1,6 @@
 const { EmbedBuilder, MessageActionRow, MessageButton,ButtonBuilder,ActionRowBuilder, InteractionCollector } = require('discord.js');
 const userButtonMap = {};
+const userLoopMap = {}; 
 
 let storedEmbed = null;  // Variable to store the embed
 let storedActionRow = null;  // Variable to store the action row
@@ -95,46 +96,39 @@ module.exports = {
 // Handle button interactions
 if (interaction.isButton()) {
 
-  const userId = interaction.user.id;
-  
-      const message = await interaction.channel.messages.fetch({ around: interaction.message.id, limit: 1 });
-      const fetchedMessage = message.first();
-      const receivedEmbed = fetchedMessage.embeds[0];
-      const { fields } = receivedEmbed;
-
-
-      if (interaction.customId === 'loopEvent') {
+  if (interaction.customId === 'loopEvent') {
+    // Defer the interaction
     await interaction.deferReply({ ephemeral: true });
 
     // Capture the current embed and action row
     const message = await interaction.channel.messages.fetch({ around: interaction.message.id, limit: 1 });
     const fetchedMessage = message.first();
-    const currentEmbed = fetchedMessage.embeds[0];
-    const currentActionRow = fetchedMessage.components[0];
+    storedEmbed = fetchedMessage.embeds[0];
+    storedActionRow = fetchedMessage.components[0];  // Assuming the action row is the first component
 
     // Schedule the event to repeat every 1 minute (for testing)
     const intervalId = setInterval(async () => {
-      await interaction.channel.send({ embeds: [currentEmbed], components: [currentActionRow] });
-    }, 60 * 1000);
+      // Send the stored embed and action row
+      await interaction.channel.send({ embeds: [storedEmbed], components: [storedActionRow] });
+    }, 60 * 1000);  // 1 minute in milliseconds
 
-    // Store the intervalId, embed, and actionRow
-    if (!userButtonMap[userId]) {
-      userButtonMap[userId] = [];
-    }
-    userButtonMap[userId].push({ intervalId, embed: currentEmbed, actionRow: currentActionRow });
+    // Store the intervalId to stop it later if needed
+    userLoopMap[interaction.user.id] = { intervalId };
 
+    // Follow up after deferring
     await interaction.followUp({ content: `Event will now repeat every 1 minute.`, ephemeral: true });
   } else if (interaction.customId === 'stopLoopEvent') {
+    // Defer the interaction
     await interaction.deferReply({ ephemeral: true });
 
-    if (userButtonMap[userId]) {
-      // Stop all loops for this user
-      userButtonMap[userId].forEach(({ intervalId }) => {
-        clearInterval(intervalId);
-      });
-      delete userButtonMap[userId];
+    const userId = interaction.user.id;
 
-      await interaction.followUp({ content: `All repeating events for you have been stopped.`, ephemeral: true });
+    if (userButtonMap[userId] && userButtonMap[userId].intervalId) {
+      // Stop the loop
+      clearInterval(userLoopMap[userId].intervalId);
+      delete userLoopMap[userId];
+
+      await interaction.followUp({ content: `Event will no longer repeat.`, ephemeral: true });
     } else {
       await interaction.followUp({ content: `No repeating event to stop.`, ephemeral: true });
     }
@@ -146,6 +140,11 @@ if (interaction.isButton()) {
       const customIdObject = JSON.parse(interaction.customId);
       const userId = interaction.user.id;
       const userMention = `<@${userId}>`;
+
+      const message = await interaction.channel.messages.fetch({ around: interaction.message.id, limit: 1 });
+      const fetchedMessage = message.first();
+      const receivedEmbed = fetchedMessage.embeds[0];
+      const { fields } = receivedEmbed;
       
   
       // Remove previous choice if exists
