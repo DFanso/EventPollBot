@@ -5,6 +5,20 @@ const userLoopMap = {};
 let storedEmbed = null;  // Variable to store the embed
 let storedActionRow = null;  // Variable to store the action row
 
+
+// Function to start a repeating event
+function startRepeatingEvent(channel, embed, actionRow, userId, eventName) {
+  const intervalId = setInterval(async () => {
+    await channel.send({ embeds: [embed], components: [actionRow] });
+  }, 60 * 1000);  // 1 minute in milliseconds
+
+  // Store the intervalId for the specific event
+  if (!userLoopMap[userId]) {
+    userLoopMap[userId] = {};
+  }
+  userLoopMap[userId][eventName] = intervalId;
+}
+
 module.exports = {
   name: 'interactionCreate',
   async execute(interaction, client) {
@@ -92,9 +106,21 @@ module.exports = {
     }
 
     
-
 // Handle button interactions
 if (interaction.isButton()) {
+
+  
+
+  if (!userLoopMap[interaction.user.id]) {
+    userLoopMap[interaction.user.id] = {};
+  }
+
+
+  // Fetch the message to get the embed
+  const message = await interaction.channel.messages.fetch({ around: interaction.message.id, limit: 1 });
+  const fetchedMessage = message.first();
+  const receivedEmbed = fetchedMessage.embeds[0];
+
 
   if (interaction.customId === 'loopEvent') {
     // Defer the interaction
@@ -103,17 +129,12 @@ if (interaction.isButton()) {
     // Capture the current embed and action row
     const message = await interaction.channel.messages.fetch({ around: interaction.message.id, limit: 1 });
     const fetchedMessage = message.first();
-    storedEmbed = fetchedMessage.embeds[0];
-    storedActionRow = fetchedMessage.components[0];  // Assuming the action row is the first component
+    const currentEmbed = fetchedMessage.embeds[0];
+    const currentActionRow = fetchedMessage.components[0];  // Assuming the action row is the first component
+    const eventName = currentEmbed.title;  // Unique identifier for the event
 
-    // Schedule the event to repeat every 1 minute (for testing)
-    const intervalId = setInterval(async () => {
-      // Send the stored embed and action row
-      await interaction.channel.send({ embeds: [storedEmbed], components: [storedActionRow] });
-    }, 60 * 1000);  // 1 minute in milliseconds
-
-    // Store the intervalId to stop it later if needed
-    userLoopMap[interaction.user.id] = { intervalId };
+    // Start the repeating event
+    startRepeatingEvent(interaction.channel, currentEmbed, currentActionRow, interaction.user.id, eventName);
 
     // Follow up after deferring
     await interaction.followUp({ content: `Event will now repeat every 1 minute.`, ephemeral: true });
@@ -123,10 +144,10 @@ if (interaction.isButton()) {
 
     const userId = interaction.user.id;
 
-    if (userButtonMap[userId] && userButtonMap[userId].intervalId) {
-      // Stop the loop
-      clearInterval(userLoopMap[userId].intervalId);
-      delete userLoopMap[userId];
+        const eventName = receivedEmbed.title;  // Unique identifier for the event
+         if (userLoopMap[userId] && userLoopMap[userId][eventName]) {
+        clearInterval(userLoopMap[userId][eventName]);
+        delete userLoopMap[userId][eventName];
 
       await interaction.followUp({ content: `Event will no longer repeat.`, ephemeral: true });
     } else {
