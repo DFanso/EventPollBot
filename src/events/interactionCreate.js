@@ -34,7 +34,7 @@ module.exports = {
     const pollEmbed = new EmbedBuilder()
       .setTitle(eventName)
       .setDescription(`Description: ${eventDescription}\n\nPlease vote.`)
-      .setColor(0x0099FF)
+      .setColor(0xE67E22)
       .setTimestamp()
       .setAuthor({ name: interaction.user.username, iconURL: interaction.user.avatarURL(), url: 'https://discord.js.org' })
       .addFields(
