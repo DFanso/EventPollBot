@@ -1,6 +1,9 @@
 const { EmbedBuilder, MessageActionRow, MessageButton,ButtonBuilder,ActionRowBuilder, InteractionCollector } = require('discord.js');
 const userButtonMap = {};
 
+let storedEmbed = null;  // Variable to store the embed
+let storedActionRow = null;  // Variable to store the action row
+
 module.exports = {
   name: 'interactionCreate',
   async execute(interaction, client) {
@@ -66,8 +69,18 @@ module.exports = {
           .setStyle(style);
       });
 
+      const loopButton = new ButtonBuilder()
+      .setCustomId('loopEvent')
+      .setLabel('Loop')
+      .setStyle('Secondary');
+
+      const stopLoopButton = new ButtonBuilder()
+      .setCustomId('stopLoopEvent')
+      .setLabel('Stop Loop')
+      .setStyle('Danger');
+
       // Create an action row and add the buttons
-      const actionRow = new ActionRowBuilder().addComponents(buttons);
+      const actionRow = new ActionRowBuilder().addComponents([...buttons, loopButton, stopLoopButton]);
 
      // Send the poll embed and buttons
      await interaction.channel.send({ embeds: [pollEmbed], components: [actionRow] });
@@ -81,74 +94,122 @@ module.exports = {
 
 // Handle button interactions
 if (interaction.isButton()) {
-  try {
-    await interaction.deferUpdate();
 
-    const customIdObject = JSON.parse(interaction.customId);
-    const userId = interaction.user.id;
-    const userMention = `<@${userId}>`;
+  const userId = interaction.user.id;
+  
+      const message = await interaction.channel.messages.fetch({ around: interaction.message.id, limit: 1 });
+      const fetchedMessage = message.first();
+      const receivedEmbed = fetchedMessage.embeds[0];
+      const { fields } = receivedEmbed;
 
+
+      if (interaction.customId === 'loopEvent') {
+    await interaction.deferReply({ ephemeral: true });
+
+    // Capture the current embed and action row
     const message = await interaction.channel.messages.fetch({ around: interaction.message.id, limit: 1 });
     const fetchedMessage = message.first();
-    const receivedEmbed = fetchedMessage.embeds[0];
-    const { fields } = receivedEmbed;
+    const currentEmbed = fetchedMessage.embeds[0];
+    const currentActionRow = fetchedMessage.components[0];
 
-    // Remove previous choice if exists
-    if (userButtonMap.hasOwnProperty(userId)) {
-      const prevIndex = userButtonMap[userId];
-      const prevUsers = fields[prevIndex].value.split('\n');  // Split by newline
-      const newPrevUsers = prevUsers.filter(u => u !== userMention).join('\n');  // Join by newline
-      fields[prevIndex].value = newPrevUsers;
+    // Schedule the event to repeat every 1 minute (for testing)
+    const intervalId = setInterval(async () => {
+      await interaction.channel.send({ embeds: [currentEmbed], components: [currentActionRow] });
+    }, 60 * 1000);
+
+    // Store the intervalId, embed, and actionRow
+    if (!userButtonMap[userId]) {
+      userButtonMap[userId] = [];
     }
+    userButtonMap[userId].push({ intervalId, embed: currentEmbed, actionRow: currentActionRow });
 
-    // Add new choice
-    const index = parseInt(customIdObject.ffb.split('_')[1]);
-    const choice = fields[index].name;
+    await interaction.followUp({ content: `Event will now repeat every 1 minute.`, ephemeral: true });
+  } else if (interaction.customId === 'stopLoopEvent') {
+    await interaction.deferReply({ ephemeral: true });
 
-    // Check if the new choice is the same as the previous choice
-    if (userButtonMap.hasOwnProperty(userId) && userButtonMap[userId] === index) {
-      // Remove the user's name from the list
-      const prevUsers = fields[index].value.split('\n');  // Split by newline
-      const newPrevUsers = prevUsers.filter(u => u !== userMention).join('\n');  // Join by newline
-      fields[index].value = newPrevUsers;
-
-      // Update the user-button map to indicate no current choice
+    if (userButtonMap[userId]) {
+      // Stop all loops for this user
+      userButtonMap[userId].forEach(({ intervalId }) => {
+        clearInterval(intervalId);
+      });
       delete userButtonMap[userId];
 
-      await interaction.followUp({ content: `You removed your vote for ${choice}`, ephemeral: true });
+      await interaction.followUp({ content: `All repeating events for you have been stopped.`, ephemeral: true });
     } else {
-      // Add the new choice
-      fields[index].value = fields[index].value ? `${fields[index].value}\n${userMention}` : userMention;
-
-      // Update the user-button map
-      userButtonMap[userId] = index;
-
-      await interaction.followUp({ content: `You voted for ${choice}`, ephemeral: true });
+      await interaction.followUp({ content: `No repeating event to stop.`, ephemeral: true });
+    }
+  }
+  else {
+    try {
+      await interaction.deferUpdate();
+  
+      const customIdObject = JSON.parse(interaction.customId);
+      const userId = interaction.user.id;
+      const userMention = `<@${userId}>`;
+      
+  
+      // Remove previous choice if exists
+      if (userButtonMap.hasOwnProperty(userId)) {
+        const prevIndex = userButtonMap[userId];
+        const prevUsers = fields[prevIndex].value.split('\n');  // Split by newline
+        const newPrevUsers = prevUsers.filter(u => u !== userMention).join('\n');  // Join by newline
+        fields[prevIndex].value = newPrevUsers;
+      }
+  
+      // Add new choice
+      const index = parseInt(customIdObject.ffb.split('_')[1]);
+      const choice = fields[index].name;
+  
+      // Check if the new choice is the same as the previous choice
+      if (userButtonMap.hasOwnProperty(userId) && userButtonMap[userId] === index) {
+        // Remove the user's name from the list
+        const prevUsers = fields[index].value.split('\n');  // Split by newline
+        const newPrevUsers = prevUsers.filter(u => u !== userMention).join('\n');  // Join by newline
+        fields[index].value = newPrevUsers;
+  
+        // Update the user-button map to indicate no current choice
+        delete userButtonMap[userId];
+  
+        await interaction.followUp({ content: `You removed your vote for ${choice}`, ephemeral: true });
+      } else {
+        // Add the new choice
+        fields[index].value = fields[index].value ? `${fields[index].value}\n${userMention}` : userMention;
+  
+        // Update the user-button map
+        userButtonMap[userId] = index;
+  
+        await interaction.followUp({ content: `You voted for ${choice}`, ephemeral: true });
+      }
+  
+      // Ensure all field values are non-empty and trim extra spaces
+      fields.forEach(field => {
+        if (!field.value || field.value.length === 0) {
+          field.value = " ";
+        } else {
+          field.value = field.value.trim();
+        }
+      });
+  
+      // Create a new EmbedBuilder and add the updated fields
+      const newEmbed = new EmbedBuilder()
+        .setTitle(receivedEmbed.title)
+        .setDescription(receivedEmbed.description)
+        .setColor(receivedEmbed.color)
+        .setAuthor(receivedEmbed.author)
+        .setTimestamp(new Date(receivedEmbed.timestamp))
+        .addFields(fields);
+  
+      await fetchedMessage.edit({ embeds: [newEmbed] });
+  
+    } catch (error) {
+      console.error("An error occurred:", error);
     }
 
-    // Ensure all field values are non-empty and trim extra spaces
-    fields.forEach(field => {
-      if (!field.value || field.value.length === 0) {
-        field.value = " ";
-      } else {
-        field.value = field.value.trim();
-      }
-    });
-
-    // Create a new EmbedBuilder and add the updated fields
-    const newEmbed = new EmbedBuilder()
-      .setTitle(receivedEmbed.title)
-      .setDescription(receivedEmbed.description)
-      .setColor(receivedEmbed.color)
-      .setAuthor(receivedEmbed.author)
-      .setTimestamp(new Date(receivedEmbed.timestamp))
-      .addFields(fields);
-
-    await fetchedMessage.edit({ embeds: [newEmbed] });
-
-  } catch (error) {
-    console.error("An error occurred:", error);
   }
+  
+
+
+  
 }
 
   },
