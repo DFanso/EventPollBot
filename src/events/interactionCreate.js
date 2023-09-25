@@ -82,6 +82,8 @@ module.exports = {
 // Handle button interactions
 if (interaction.isButton()) {
   try {
+    await interaction.deferUpdate();
+
     const customIdObject = JSON.parse(interaction.customId);
     const userId = interaction.user.id;
     const userMention = `<@${userId}>`;
@@ -91,10 +93,7 @@ if (interaction.isButton()) {
     const receivedEmbed = fetchedMessage.embeds[0];
     const { fields } = receivedEmbed;
 
-    // Debugging: Log the current state of fields and userButtonMap
-    console.log("Before:", { fields, userButtonMap });
-
-      // Remove previous choice if exists
+    // Remove previous choice if exists
     if (userButtonMap.hasOwnProperty(userId)) {
       const prevIndex = userButtonMap[userId];
       const prevUsers = fields[prevIndex].value.split('\n');  // Split by newline
@@ -102,16 +101,30 @@ if (interaction.isButton()) {
       fields[prevIndex].value = newPrevUsers;
     }
 
-  
-  // Add new choice
-  const index = parseInt(customIdObject.ffb.split('_')[1]);
-  fields[index].value = fields[index].value ? `${fields[index].value}\n${userMention}` : userMention;
+    // Add new choice
+    const index = parseInt(customIdObject.ffb.split('_')[1]);
+    const choice = fields[index].name;
 
-  // Update the user-button map
-  userButtonMap[userId] = index;
+    // Check if the new choice is the same as the previous choice
+    if (userButtonMap.hasOwnProperty(userId) && userButtonMap[userId] === index) {
+      // Remove the user's name from the list
+      const prevUsers = fields[index].value.split('\n');  // Split by newline
+      const newPrevUsers = prevUsers.filter(u => u !== userMention).join('\n');  // Join by newline
+      fields[index].value = newPrevUsers;
 
-    // Debugging: Log the updated state of fields and userButtonMap
-    console.log("After:", { fields, userButtonMap });
+      // Update the user-button map to indicate no current choice
+      delete userButtonMap[userId];
+
+      await interaction.followUp({ content: `You removed your vote for ${choice}`, ephemeral: true });
+    } else {
+      // Add the new choice
+      fields[index].value = fields[index].value ? `${fields[index].value}\n${userMention}` : userMention;
+
+      // Update the user-button map
+      userButtonMap[userId] = index;
+
+      await interaction.followUp({ content: `You voted for ${choice}`, ephemeral: true });
+    }
 
     // Ensure all field values are non-empty and trim extra spaces
     fields.forEach(field => {
@@ -137,9 +150,6 @@ if (interaction.isButton()) {
     console.error("An error occurred:", error);
   }
 }
-
-
-
 
   },
   
