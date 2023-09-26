@@ -1,4 +1,5 @@
 const { EmbedBuilder, MessageActionRow, MessageButton,ButtonBuilder,ActionRowBuilder, InteractionCollector } = require('discord.js');
+const {admin} = require('../config.json')
 const userButtonMap = {};
 const userLoopMap = {}; 
 
@@ -76,13 +77,13 @@ module.exports = {
       // Create buttons for each choice using ButtonBuilder
       const buttons = choices.map((choice, index) => {
         let style = 'Primary';
-        if(choice === 'Present' || choice === 'present'){
+        if(choice === '✅ Present' || choice === 'present'){
           style = 'Success';
         }
-        else if(choice === 'Absent' || choice === 'absent'){
+        else if(choice === '❌ Absent' || choice === 'absent'){
           style = 'Danger';
         }
-        else if(choice === 'Late' || choice === 'late'){
+        else if(choice === '⌚ Late' || choice === 'late'){
           style = 'Primary';
         }
         else if(choice === 'I do not know' || choice === 'i do not know'){
@@ -121,7 +122,8 @@ module.exports = {
     
 // Handle button interactions
 if (interaction.isButton()) {
-
+        const roleId = admin; 
+        const member = interaction.member;  
   
 
   if (!userLoopMap[interaction.user.id]) {
@@ -135,7 +137,7 @@ if (interaction.isButton()) {
   const receivedEmbed = fetchedMessage.embeds[0];
 
 
-  if (interaction.customId === 'loopEvent') {
+  if (member.roles.cache.has(roleId) && interaction.customId === 'loopEvent' ) {
     // Defer the interaction
     await interaction.deferReply({ ephemeral: true });
 
@@ -151,7 +153,7 @@ if (interaction.isButton()) {
 
     // Follow up after deferring
     await interaction.followUp({ content: `Event will now repeat every 1 minute.`, ephemeral: true });
-  } else if (interaction.customId === 'stopLoopEvent') {
+  } else if (member.roles.cache.has(roleId) && interaction.customId === 'stopLoopEvent') {
     // Defer the interaction
     await interaction.deferReply({ ephemeral: true });
 

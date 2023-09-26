@@ -48,7 +48,8 @@ module.exports = {
         
     },
     async execute(interaction) {
-        const roleId = admin; // Replace with your role's ID
+        
+        const roleId = admin; 
         const member = interaction.member;      
 
         if (member.roles.cache.has(roleId)) {
