@@ -145,8 +145,8 @@ if (interaction.isButton()) {
     const message = await interaction.channel.messages.fetch({ around: interaction.message.id, limit: 1 });
     const fetchedMessage = message.first();
     const currentEmbed = fetchedMessage.embeds[0];
-    const currentActionRow = fetchedMessage.components[0];  // Assuming the action row is the first component
-    const eventName = currentEmbed.title;  // Unique identifier for the event
+    const currentActionRow = fetchedMessage.components[0];  
+    const eventName = currentEmbed.title;  
 
     // Start the repeating event
     startRepeatingEvent(interaction.channel, currentEmbed, currentActionRow, interaction.user.id, eventName);
@@ -241,10 +241,6 @@ if (interaction.isButton()) {
     }
 
   }
-  
-
-
-  
 }
 
   },
