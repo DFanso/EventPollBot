@@ -1,4 +1,5 @@
 const { EmbedBuilder, ButtonBuilder,ActionRowBuilder } = require('discord.js');
+const {admin,image,thumbnail} = require('./config.json')
 
 async function createPoll(interaction) {
     const eventName = interaction.options.getString('name');
@@ -16,6 +17,8 @@ async function createPoll(interaction) {
       .setDescription(`Description: ${eventDescription}\n\nPlease vote.`)
       .setColor(0xE67E22)
       .setTimestamp()
+      .setThumbnail(thumbnail)
+      .setImage(image)
       .setAuthor({ name: interaction.user.username, iconURL: interaction.user.avatarURL(), url: 'https://discord.js.org' })
       .addFields(
         ...choiceFields,

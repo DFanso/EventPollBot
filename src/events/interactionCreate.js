@@ -1,5 +1,5 @@
 const { EmbedBuilder, MessageActionRow, MessageButton,ButtonBuilder,ActionRowBuilder, InteractionCollector } = require('discord.js');
-const {admin} = require('../config.json')
+const {admin,image,thumbnail} = require('../config.json')
 const userButtonMap = {};
 const userLoopMap = {}; 
 
@@ -12,6 +12,8 @@ function startRepeatingEvent(channel, embed, actionRow, userId, eventName) {
     .setDescription(embed.description)
     .setColor(embed.color)
     .setAuthor(embed.author)
+    .setThumbnail(embed.thumbnail.url)
+    .setImage(embed.image.url)
     .setTimestamp(new Date(embed.timestamp))
     .addFields(
       embed.fields.map(field => ({
@@ -68,6 +70,8 @@ module.exports = {
       .setDescription(`Description: ${eventDescription}\n\nPlease vote.`)
       .setColor(0xE67E22)
       .setTimestamp()
+      .setThumbnail(thumbnail)
+      .setImage(image)
       .setAuthor({ name: interaction.user.username, iconURL: interaction.user.avatarURL(), url: 'https://discord.js.org' })
       .addFields(
         ...choiceFields,
@@ -231,6 +235,8 @@ if (interaction.isButton()) {
         .setDescription(receivedEmbed.description)
         .setColor(receivedEmbed.color)
         .setAuthor(receivedEmbed.author)
+        .setThumbnail(receivedEmbed.thumbnail.url)
+        .setImage(receivedEmbed.image.url)
         .setTimestamp(new Date(receivedEmbed.timestamp))
         .addFields(fields);
   
