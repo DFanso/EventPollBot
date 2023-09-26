@@ -1,6 +1,7 @@
 const { ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
-
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const {admin} = require('../config.json')
+
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -39,7 +40,16 @@ module.exports = {
   // Add components to the modal
   pollModal.addComponents(firstActionRow, secondActionRow,thirdActionRow);
 
-  // Show the modal
-  await interaction.showModal(pollModal);
+  const roleId = admin; 
+  const member = interaction.member;
+
+
+        if (member.roles.cache.has(roleId)) {
+            // Show the modal
+            await interaction.showModal(pollModal);
+        } else {
+            interaction.reply({ content: "You don't have permission to use this command.", ephemeral: true });
+            return;
+        }
     }
 };
