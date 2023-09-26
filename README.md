@@ -13,7 +13,7 @@ EventPollBot is a Discord bot designed to help server admins and users create in
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/your-username/EventPollBot.git
+   git clone https://github.com/DFanso/EventPollBot.git
    cd EventPollBot
    ```
 
