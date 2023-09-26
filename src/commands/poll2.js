@@ -1,5 +1,6 @@
 const { MessageActionRow, MessageButton, MessageEmbed } = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { createPoll } = require('../pollHandler');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -42,5 +43,11 @@ module.exports = {
             .addComponents(buttons);
 
         await interaction.reply({ embeds: [pollEmbed], components: [actionRow] });
+        
+    },
+    async execute(interaction) {
+        const poll = createPoll(interaction);
+        // await interaction.reply(poll);
     }
+    
 };
