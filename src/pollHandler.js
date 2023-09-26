@@ -25,15 +25,15 @@ async function createPoll(interaction) {
       // Create buttons for each choice using ButtonBuilder
       const buttons = choices.map((choice, index) => {
         let style = 'Primary';
-        if(choice === 'Present' || choice === 'present'){
-          style = 'Success';
-        }
-        else if(choice === 'Absent' || choice === 'absent'){
-          style = 'Danger';
-        }
-        else if(choice === 'Late' || choice === 'late'){
-          style = 'Primary';
-        }
+        if(choice === '✅ Present' || choice === 'present'){
+            style = 'Success';
+          }
+          else if(choice === '❌ Absent' || choice === 'absent'){
+            style = 'Danger';
+          }
+          else if(choice === '⌚ Late' || choice === 'late'){
+            style = 'Primary';
+          }
         else if(choice === 'I do not know' || choice === 'i do not know'){
           style = 'Secondary';
         }

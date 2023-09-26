@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits,ActivityType } = require('discord.js');
 const fs = require('fs');
 require('dotenv').config();
 
@@ -15,6 +15,8 @@ const client = new Client({ intents:
   GatewayIntentBits.GuildIntegrations
 
 ] });
+
+
 
 // Dynamically read event files
 const eventFiles = fs.readdirSync('./src/events').filter(file => file.endsWith('.js'));

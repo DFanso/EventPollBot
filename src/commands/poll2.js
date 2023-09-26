@@ -1,6 +1,8 @@
 const { MessageActionRow, MessageButton, MessageEmbed } = require('discord.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { createPoll } = require('../pollHandler');
+const {admin} = require('../config.json')
+
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -46,8 +48,16 @@ module.exports = {
         
     },
     async execute(interaction) {
-        const poll = createPoll(interaction);
-        // await interaction.reply(poll);
+        
+        const roleId = admin; 
+        const member = interaction.member;      
+
+        if (member.roles.cache.has(roleId)) {
+            createPoll(interaction);
+        } else {
+            interaction.reply({ content: "You don't have permission to use this command.", ephemeral: true });
+            return;
+        }
     }
     
 };
