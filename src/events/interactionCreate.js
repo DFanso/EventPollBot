@@ -2,14 +2,26 @@ const { EmbedBuilder, MessageActionRow, MessageButton,ButtonBuilder,ActionRowBui
 const userButtonMap = {};
 const userLoopMap = {}; 
 
-let storedEmbed = null;  // Variable to store the embed
-let storedActionRow = null;  // Variable to store the action row
-
 
 // Function to start a repeating event
 function startRepeatingEvent(channel, embed, actionRow, userId, eventName) {
+  // Create a new embed with the users removed from the fields
+  const newEmbed = new EmbedBuilder()
+    .setTitle(embed.title)
+    .setDescription(embed.description)
+    .setColor(embed.color)
+    .setAuthor(embed.author)
+    .setTimestamp(new Date(embed.timestamp))
+    .addFields(
+      embed.fields.map(field => ({
+        name: field.name,
+        value: ' ',  // Reset the value
+        inline: field.inline
+      }))
+    );
+
   const intervalId = setInterval(async () => {
-    await channel.send({ embeds: [embed], components: [actionRow] });
+    await channel.send({ embeds: [newEmbed], components: [actionRow] });
   }, 60 * 1000);  // 1 minute in milliseconds
 
   // Store the intervalId for the specific event
@@ -18,6 +30,7 @@ function startRepeatingEvent(channel, embed, actionRow, userId, eventName) {
   }
   userLoopMap[userId][eventName] = intervalId;
 }
+
 
 module.exports = {
   name: 'interactionCreate',
